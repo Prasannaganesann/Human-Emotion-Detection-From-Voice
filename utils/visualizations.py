@@ -42,6 +42,7 @@ def plot_waveform(y: np.ndarray, sr: int = SAMPLE_RATE,
         margin=dict(l=40, r=20, t=40, b=40),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0.15)",
+        font_color="#e2e8f0",
     )
     return fig
 
@@ -109,6 +110,7 @@ def plot_mfcc(y: np.ndarray, sr: int = SAMPLE_RATE,
         margin=dict(l=80, r=20, t=40, b=40),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0.15)",
+        font_color="#e2e8f0",
     )
     return fig
 
@@ -150,6 +152,7 @@ def plot_emotion_probabilities(probabilities: dict,
         margin=dict(l=20, r=60, t=40, b=40),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0.15)",
+        font_color="#e2e8f0",
         showlegend=False,
     )
     return fig
@@ -194,6 +197,7 @@ def plot_emotion_trend(trend_data: list[dict]) -> go.Figure:
         margin=dict(l=40, r=20, t=40, b=40),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0.15)",
+        font_color="#e2e8f0",
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
     )
     return fig
@@ -230,6 +234,7 @@ def plot_emotion_distribution(stats: dict) -> go.Figure:
         height=320,
         margin=dict(l=20, r=20, t=40, b=20),
         paper_bgcolor="rgba(0,0,0,0)",
+        font_color="#e2e8f0",
     )
     return fig
 
@@ -305,6 +310,7 @@ def plot_model_comparison(results: dict) -> go.Figure:
         margin=dict(l=40, r=20, t=50, b=60),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0.15)",
+        font_color="#e2e8f0",
         legend=dict(orientation="h", yanchor="bottom", y=1.02),
     )
     return fig

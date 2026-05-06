@@ -53,25 +53,27 @@ RAVDESS_EMOTION_MAP = {
 TARGET_EMOTIONS = ["neutral", "happy", "sad", "angry", "fearful"]
 
 EMOTION_COLORS = {
-    "neutral":  "#94A3B8",
-    "happy":    "#FCD34D",
-    "sad":      "#60A5FA",
-    "angry":    "#F87171",
-    "fearful":  "#A78BFA",
-    "calm":     "#6EE7B7",
-    "disgust":  "#FB923C",
-    "surprised":"#F472B6",
+    "neutral":    "#94A3B8",
+    "happy":      "#FCD34D",
+    "sad":        "#60A5FA",
+    "angry":      "#F87171",
+    "fearful":    "#A78BFA",
+    "calm":       "#6EE7B7",
+    "disgust":    "#FB923C",
+    "surprised":  "#F472B6",
+    "uncertain":  "#6B7280",
 }
 
 EMOTION_EMOJIS = {
-    "neutral":  "😐",
-    "happy":    "😊",
-    "sad":      "😢",
-    "angry":    "😠",
-    "fearful":  "😨",
-    "calm":     "😌",
-    "disgust":  "🤢",
-    "surprised":"😲",
+    "neutral":    "😐",
+    "happy":      "😊",
+    "sad":        "😢",
+    "angry":      "😠",
+    "fearful":    "😨",
+    "calm":       "😌",
+    "disgust":    "🤢",
+    "surprised":  "😲",
+    "uncertain":  "❓",
 }
 
 # ─────────────────────────────────────────────

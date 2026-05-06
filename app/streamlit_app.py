@@ -65,6 +65,12 @@ st.markdown("""
 
 html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
 
+/* Hide Streamlit chrome for clean look */
+#MainMenu { visibility: hidden; }
+header { visibility: hidden; }
+footer { visibility: hidden; }
+[data-testid="stHeader"] { background: transparent; }
+
 /* Dark background */
 .stApp { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); }
 
@@ -110,26 +116,63 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
     border-right: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Metric cards */
+/* Metric cards – ensure labels and values are readable */
 div[data-testid="metric-container"] {
     background: rgba(255,255,255,0.05);
     border: 1px solid rgba(255,255,255,0.1);
     border-radius: 12px;
     padding: 16px;
 }
+div[data-testid="metric-container"] label {
+    color: #a5b4fc !important;
+    font-weight: 500 !important;
+}
+div[data-testid="metric-container"] [data-testid="stMetricValue"] {
+    color: #e2e8f0 !important;
+}
 
-/* Buttons */
+/* Buttons – ensure text is readable */
 .stButton > button {
     border-radius: 10px !important;
     font-weight: 600 !important;
     transition: all 0.2s ease !important;
+    color: white !important;
 }
-.stButton > button:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(99,102,241,0.4); }
+.stButton > button[kind="primary"] {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    border: none !important;
+    color: white !important;
+}
+.stButton > button[kind="secondary"] {
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    color: #e2e8f0 !important;
+}
+.stButton > button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+}
 
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] { background: rgba(255,255,255,0.03); border-radius: 12px; }
-.stTabs [data-baseweb="tab"]      { border-radius: 8px; font-weight: 500; }
-.stTabs [aria-selected="true"]    { background: rgba(99,102,241,0.3) !important; }
+/* Tabs – fix invisible inactive tab text */
+.stTabs [data-baseweb="tab-list"] {
+    background: rgba(255,255,255,0.04);
+    border-radius: 12px;
+    gap: 4px;
+}
+.stTabs [data-baseweb="tab"] {
+    border-radius: 8px;
+    font-weight: 500;
+    color: #94a3b8 !important;
+}
+.stTabs [aria-selected="true"] {
+    background: rgba(99,102,241,0.3) !important;
+    color: #e0e7ff !important;
+    font-weight: 600;
+}
+.stTabs [data-baseweb="tab"]:hover {
+    color: #c7d2fe !important;
+    background: rgba(99,102,241,0.12) !important;
+}
 
 /* Upload area */
 [data-testid="stFileUploader"] {
@@ -137,6 +180,16 @@ div[data-testid="metric-container"] {
     border: 2px dashed rgba(99,102,241,0.5);
     border-radius: 14px;
 }
+
+/* Radio buttons – ensure labels are readable */
+.stRadio > div { color: #cbd5e1 !important; }
+.stRadio label span { color: #cbd5e1 !important; }
+
+/* Slider labels */
+.stSlider label { color: #94a3b8 !important; }
+
+/* Selectbox */
+.stSelectbox label { color: #a5b4fc !important; }
 
 /* History table */
 .history-row {
@@ -146,6 +199,9 @@ div[data-testid="metric-container"] {
     margin-bottom: 8px;
     border-left: 3px solid var(--border-color);
 }
+
+/* Section headers */
+.stMarkdown h3, .stMarkdown h4 { color: #e2e8f0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -408,7 +464,8 @@ with tab_detect:
             # Probability chart
             st.plotly_chart(
                 plot_emotion_probabilities(probs, emotion),
-                use_container_width=True
+                use_container_width=True,
+                key="detect_probs"
             )
 
             # Audio stats
@@ -508,11 +565,11 @@ with tab_visualize:
             col_v1, col_v2 = st.columns(2)
 
             with col_v1:
-                st.plotly_chart(plot_waveform(y, sr), use_container_width=True)
-                st.plotly_chart(plot_mfcc(y, sr), use_container_width=True)
+                st.plotly_chart(plot_waveform(y, sr), use_container_width=True, key="viz_waveform")
+                st.plotly_chart(plot_mfcc(y, sr), use_container_width=True, key="viz_mfcc")
 
             with col_v2:
-                st.plotly_chart(plot_mel_spectrogram(y, sr), use_container_width=True)
+                st.plotly_chart(plot_mel_spectrogram(y, sr), use_container_width=True, key="viz_mel")
 
                 # Feature importance (top MFCC values)
                 from utils.feature_extraction import extract_features
@@ -569,7 +626,7 @@ with tab_history:
     with col_h2:
         st.markdown("#### Emotion Trend")
         trend_data = get_trend_data(n=30)
-        st.plotly_chart(plot_emotion_trend(trend_data), use_container_width=True)
+        st.plotly_chart(plot_emotion_trend(trend_data), use_container_width=True, key="hist_trend")
 
 
 # ══════════════════════════════════════════════
@@ -601,7 +658,7 @@ with tab_dashboard:
 
         with col_d1:
             st.plotly_chart(plot_emotion_distribution(stats),
-                            use_container_width=True)
+                            use_container_width=True, key="dash_dist")
 
         with col_d2:
             # Load model comparison if available
@@ -610,13 +667,12 @@ with tab_dashboard:
                 with open(comp_path) as f:
                     comp_data = json.load(f)
                 st.plotly_chart(plot_model_comparison(comp_data),
-                                use_container_width=True)
+                                use_container_width=True, key="dash_model_comp")
             else:
                 # Show emotion bar chart instead
                 import plotly.express as px
                 emotions = list(stats.keys())
                 counts   = [stats[e]["count"] for e in emotions]
-                colors   = [EMOTION_COLORS.get(e, "#94A3B8") for e in emotions]
                 fig = px.bar(x=[e.capitalize() for e in emotions], y=counts,
                              color=emotions,
                              color_discrete_map={e: EMOTION_COLORS.get(e,"#94A3B8")
@@ -626,13 +682,14 @@ with tab_dashboard:
                 fig.update_layout(showlegend=False,
                                   paper_bgcolor="rgba(0,0,0,0)",
                                   plot_bgcolor="rgba(0,0,0,0.15)",
+                                  font_color="#e2e8f0",
                                   height=320)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, use_container_width=True, key="dash_bar")
 
         # Full trend chart
         st.markdown("#### 📈 Full Emotion Trend")
         trend_all = get_trend_data(n=100)
-        st.plotly_chart(plot_emotion_trend(trend_all), use_container_width=True)
+        st.plotly_chart(plot_emotion_trend(trend_all), use_container_width=True, key="dash_trend")
 
         # Detailed stats table
         st.markdown("#### 📋 Emotion Statistics Table")
