@@ -1,0 +1,49 @@
+# ── Virtual Environments ────────────────────────
+.venv/
+venv/
+env/
+
+# ── Python Bytecode ─────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# ── Model Artifacts (generate locally) ──────────
+saved_models/*.pkl
+saved_models/*.json
+
+# ── Legacy Prototype ────────────────────────────
+emotion_app/
+
+# ── Database ────────────────────────────────────
+*.db
+
+# ── Logs & Evaluation Outputs ───────────────────
+logs/*.png
+logs/*.json
+
+# ── Testing / Coverage ──────────────────────────
+.pytest_cache/
+htmlcov/
+.coverage
+
+# ── IDE / Editor ────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── OS Files ────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Distribution / Build ────────────────────────
+dist/
+build/
+*.egg-info/
+
+# ── Jupyter ─────────────────────────────────────
+.ipynb_checkpoints/
