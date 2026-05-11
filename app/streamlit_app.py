@@ -61,147 +61,302 @@ st.set_page_config(
 # ─────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-html, body, [class*="css"] { font-family: 'Inter', sans-serif; }
+/* ═══════════════════════════════════════════════
+   BASE RESET & TYPOGRAPHY
+   ═══════════════════════════════════════════════ */
+html, body, [class*="css"] {
+    font-family: 'Inter', sans-serif;
+    color: #e2e8f0;
+}
 
-/* Hide Streamlit chrome for clean look */
-#MainMenu { visibility: hidden; }
-header { visibility: hidden; }
-footer { visibility: hidden; }
+/* Hide Streamlit chrome */
+#MainMenu, header, footer { visibility: hidden; }
 [data-testid="stHeader"] { background: transparent; }
+.block-container { padding-top: 1.5rem !important; }
 
-/* Dark background */
-.stApp { background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%); }
+/* ═══════════════════════════════════════════════
+   BACKGROUND — deep purple gradient
+   ═══════════════════════════════════════════════ */
+.stApp {
+    background: linear-gradient(160deg, #0a0e1a 0%, #131738 30%, #1a1545 60%, #0f1129 100%);
+}
 
-/* Glassmorphism cards */
+/* ═══════════════════════════════════════════════
+   GLASSMORPHISM CARDS
+   ═══════════════════════════════════════════════ */
 .glass-card {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
     border-radius: 16px;
     padding: 24px;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.25);
     margin-bottom: 16px;
 }
 
-/* Emotion result badge */
+/* ═══════════════════════════════════════════════
+   EMOTION RESULT BADGE
+   ═══════════════════════════════════════════════ */
 .emotion-badge {
     display: inline-flex;
     align-items: center;
-    gap: 10px;
-    padding: 12px 28px;
+    gap: 12px;
+    padding: 14px 32px;
     border-radius: 50px;
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 700;
     letter-spacing: 0.5px;
-    animation: pulse 2s infinite;
+    animation: badge-glow 2.5s ease-in-out infinite;
 }
-@keyframes pulse {
-    0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
-    50%      { box-shadow: 0 0 0 14px rgba(99,102,241,0); }
+@keyframes badge-glow {
+    0%,100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.35); }
+    50%     { box-shadow: 0 0 0 12px rgba(99,102,241,0); }
 }
 
-/* Confidence ring */
+/* Confidence number */
 .confidence-ring {
-    font-size: 3rem;
+    font-size: 3.2rem;
     font-weight: 800;
-    background: linear-gradient(90deg, #818cf8, #c084fc);
+    background: linear-gradient(135deg, #818cf8, #c084fc);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    line-height: 1.2;
 }
 
-/* Sidebar */
+/* ═══════════════════════════════════════════════
+   SIDEBAR — compact, readable
+   ═══════════════════════════════════════════════ */
 [data-testid="stSidebar"] {
-    background: rgba(15,23,42,0.95) !important;
-    border-right: 1px solid rgba(255,255,255,0.08);
+    background: linear-gradient(180deg, rgba(13,17,36,0.98) 0%, rgba(15,17,40,0.98) 100%) !important;
+    border-right: 1px solid rgba(129,140,248,0.12);
+}
+[data-testid="stSidebar"] .stMarkdown p,
+[data-testid="stSidebar"] .stMarkdown span {
+    color: #c8d0e0 !important;
+}
+[data-testid="stSidebar"] .stMarkdown strong {
+    color: #e8ecf4 !important;
+}
+[data-testid="stSidebar"] .stMarkdown h2 {
+    color: #ffffff !important;
+    font-size: 1.25rem !important;
+}
+[data-testid="stSidebar"] .stCaption p {
+    color: #8b95af !important;
+    font-size: 0.82rem !important;
+    line-height: 1.5 !important;
+}
+[data-testid="stSidebar"] [data-testid="stMetricValue"] {
+    color: #c7d2fe !important;
+    font-size: 1.8rem !important;
+}
+[data-testid="stSidebar"] [data-testid="stMetricLabel"] p {
+    color: #8b95af !important;
+    font-size: 0.8rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+[data-testid="stSidebar"] hr {
+    border-color: rgba(129,140,248,0.1) !important;
+    margin: 12px 0 !important;
 }
 
-/* Metric cards – ensure labels and values are readable */
+/* ═══════════════════════════════════════════════
+   METRIC CARDS — prominent, readable
+   ═══════════════════════════════════════════════ */
 div[data-testid="metric-container"] {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 16px;
+    background: rgba(129,140,248,0.06);
+    border: 1px solid rgba(129,140,248,0.15);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
 }
-div[data-testid="metric-container"] label {
+div[data-testid="metric-container"] label,
+div[data-testid="metric-container"] [data-testid="stMetricLabel"] p {
     color: #a5b4fc !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
+    font-size: 0.82rem !important;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
 }
 div[data-testid="metric-container"] [data-testid="stMetricValue"] {
-    color: #e2e8f0 !important;
+    color: #f1f5f9 !important;
+    font-weight: 700 !important;
 }
 
-/* Buttons – ensure text is readable */
+/* ═══════════════════════════════════════════════
+   BUTTONS — gradient primary, clear secondary
+   ═══════════════════════════════════════════════ */
 .stButton > button {
-    border-radius: 10px !important;
+    border-radius: 12px !important;
     font-weight: 600 !important;
-    transition: all 0.2s ease !important;
-    color: white !important;
+    font-size: 0.95rem !important;
+    padding: 0.6rem 1.5rem !important;
+    transition: all 0.25s cubic-bezier(.4,0,.2,1) !important;
+    color: #ffffff !important;
+    letter-spacing: 0.3px;
 }
-.stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+.stButton > button[kind="primary"],
+.stButton > button:not([kind]) {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 60%, #a78bfa 100%) !important;
     border: none !important;
-    color: white !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 14px rgba(99,102,241,0.35);
 }
 .stButton > button[kind="secondary"] {
-    background: rgba(255,255,255,0.08) !important;
-    border: 1px solid rgba(255,255,255,0.15) !important;
-    color: #e2e8f0 !important;
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid rgba(129,140,248,0.25) !important;
+    color: #c7d2fe !important;
 }
 .stButton > button:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(99,102,241,0.4);
+    box-shadow: 0 8px 28px rgba(99,102,241,0.45) !important;
+    filter: brightness(1.1);
 }
 
-/* Tabs – fix invisible inactive tab text */
+/* ═══════════════════════════════════════════════
+   TABS — clear contrast, larger text
+   ═══════════════════════════════════════════════ */
 .stTabs [data-baseweb="tab-list"] {
-    background: rgba(255,255,255,0.04);
-    border-radius: 12px;
-    gap: 4px;
+    background: rgba(129,140,248,0.05);
+    border: 1px solid rgba(129,140,248,0.1);
+    border-radius: 14px;
+    padding: 4px;
+    gap: 2px;
 }
 .stTabs [data-baseweb="tab"] {
-    border-radius: 8px;
+    border-radius: 10px;
     font-weight: 500;
-    color: #94a3b8 !important;
+    font-size: 0.9rem !important;
+    color: #9ca3c2 !important;
+    padding: 8px 16px !important;
+    transition: all 0.2s ease;
 }
 .stTabs [aria-selected="true"] {
-    background: rgba(99,102,241,0.3) !important;
-    color: #e0e7ff !important;
-    font-weight: 600;
+    background: linear-gradient(135deg, rgba(99,102,241,0.35), rgba(139,92,246,0.25)) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    box-shadow: 0 2px 8px rgba(99,102,241,0.25);
 }
 .stTabs [data-baseweb="tab"]:hover {
-    color: #c7d2fe !important;
+    color: #e0e7ff !important;
     background: rgba(99,102,241,0.12) !important;
 }
+.stTabs [data-baseweb="tab-highlight"] {
+    background-color: transparent !important;
+}
+.stTabs [data-baseweb="tab-border"] {
+    display: none !important;
+}
 
-/* Upload area */
+/* ═══════════════════════════════════════════════
+   FILE UPLOAD — prominent action area
+   ═══════════════════════════════════════════════ */
 [data-testid="stFileUploader"] {
-    background: rgba(255,255,255,0.03);
-    border: 2px dashed rgba(99,102,241,0.5);
-    border-radius: 14px;
+    background: rgba(99,102,241,0.04);
+    border: 2px dashed rgba(129,140,248,0.4);
+    border-radius: 16px;
+    padding: 8px !important;
+}
+[data-testid="stFileUploader"]:hover {
+    border-color: rgba(129,140,248,0.65);
+    background: rgba(99,102,241,0.07);
+}
+[data-testid="stFileUploader"] section > div > span {
+    color: #c7d2fe !important;
+}
+[data-testid="stFileUploader"] small {
+    color: #8b95af !important;
 }
 
-/* Radio buttons – ensure labels are readable */
-.stRadio > div { color: #cbd5e1 !important; }
-.stRadio label span { color: #cbd5e1 !important; }
+/* ═══════════════════════════════════════════════
+   FORM CONTROLS — all readable
+   ═══════════════════════════════════════════════ */
+.stRadio > div { color: #e2e8f0 !important; }
+.stRadio label span { color: #e2e8f0 !important; font-weight: 500; font-size: 0.92rem; }
+.stRadio label:hover span { color: #ffffff !important; }
 
-/* Slider labels */
-.stSlider label { color: #94a3b8 !important; }
+.stSlider label { color: #a5b4fc !important; font-weight: 500 !important; }
+.stSlider [data-testid="stTickBarMin"],
+.stSlider [data-testid="stTickBarMax"] { color: #7c85a6 !important; }
 
-/* Selectbox */
-.stSelectbox label { color: #a5b4fc !important; }
+.stSelectbox label { color: #a5b4fc !important; font-weight: 600 !important; }
+.stSelectbox > div > div { color: #e2e8f0 !important; }
 
-/* History table */
+/* ═══════════════════════════════════════════════
+   HISTORY ROWS
+   ═══════════════════════════════════════════════ */
 .history-row {
-    display: flex; align-items: center; gap: 12px;
-    padding: 10px 16px; border-radius: 10px;
-    background: rgba(255,255,255,0.04);
-    margin-bottom: 8px;
-    border-left: 3px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 14px 20px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    margin-bottom: 10px;
+    border-left: 4px solid var(--border-color);
+    transition: background 0.2s ease;
+}
+.history-row:hover {
+    background: rgba(255,255,255,0.06);
 }
 
-/* Section headers */
-.stMarkdown h3, .stMarkdown h4 { color: #e2e8f0 !important; }
+/* ═══════════════════════════════════════════════
+   HEADINGS & TEXT
+   ═══════════════════════════════════════════════ */
+.stMarkdown h1 { color: #f8fafc !important; }
+.stMarkdown h2 { color: #f1f5f9 !important; }
+.stMarkdown h3 { color: #e8ecf4 !important; font-weight: 700 !important; font-size: 1.35rem !important; }
+.stMarkdown h4 { color: #e2e8f0 !important; font-weight: 600 !important; font-size: 1.1rem !important; }
+.stMarkdown p  { color: #cbd5e1 !important; }
+.stCaption p   { color: #9ca3c2 !important; font-size: 0.84rem !important; }
+
+/* Dividers */
+hr { border-color: rgba(129,140,248,0.12) !important; }
+
+/* Info / Warning / Success boxes */
+[data-testid="stAlert"] { border-radius: 12px !important; }
+
+/* ═══════════════════════════════════════════════
+   CHARTS — dark card container
+   ═══════════════════════════════════════════════ */
+[data-testid="stPlotlyChart"] {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 8px;
+}
+
+/* ═══════════════════════════════════════════════
+   DATAFRAMES
+   ═══════════════════════════════════════════════ */
+[data-testid="stDataFrame"] {
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ═══════════════════════════════════════════════
+   SCROLLBAR
+   ═══════════════════════════════════════════════ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background: rgba(129,140,248,0.25);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgba(129,140,248,0.4); }
+
+/* ═══════════════════════════════════════════════
+   AUDIO PLAYER
+   ═══════════════════════════════════════════════ */
+audio {
+    border-radius: 12px;
+    width: 100%;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -246,8 +401,16 @@ def get_predictor():
 #  Sidebar
 # ─────────────────────────────────────────────
 with st.sidebar:
-    st.markdown("## 🎙️ **VoiceEmo**")
-    st.markdown("*Human Emotion Detection from Voice*")
+    st.markdown("""
+    <div style="text-align:center; padding:8px 0 4px;">
+      <div style="font-size:1.6rem; font-weight:800; color:#ffffff; letter-spacing:-0.5px;">
+        🎙️ VoiceEmo
+      </div>
+      <div style="color:#8b95af; font-size:0.78rem; margin-top:2px; letter-spacing:0.5px;">
+        EMOTION DETECTION ENGINE
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
     st.divider()
 
     # Model selector
@@ -258,14 +421,20 @@ with st.sidebar:
         selected_name = st.selectbox("🤖 Active Model", list(model_names.keys()))
         st.session_state.model_path = model_names[selected_name]
     else:
-        st.warning("⚠️ No trained model found.\nRun `training/train_model.py` first.")
+        st.warning("⚠️ No model found. Run `generate_demo_model.py`")
 
     st.divider()
 
     # Session info
-    st.markdown(f"**Session:** `{st.session_state.session_id}`")
+    st.markdown(f"""
+    <div style="color:#8b95af; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px;
+                margin-bottom:4px;">📡 Session</div>
+    <div style="color:#c7d2fe; font-family:monospace; font-size:0.9rem; font-weight:600;">
+      {st.session_state.session_id}
+    </div>
+    """, unsafe_allow_html=True)
     pred_count = len(get_predictions(session_id=st.session_state.session_id))
-    st.metric("Predictions this session", pred_count)
+    st.metric("Predictions", pred_count)
 
     st.divider()
 
@@ -280,26 +449,33 @@ with st.sidebar:
             st.success("All history cleared!")
 
     st.divider()
-    st.markdown("**About**")
-    st.caption("Features: MFCC · Chroma · Mel · ZCR · RMS\nModels: SVM · RF · XGBoost · GBM\nDataset: RAVDESS")
+    st.markdown("""
+    <div style="color:#8b95af; font-size:0.78rem; text-transform:uppercase; letter-spacing:0.5px;
+                margin-bottom:6px;">ℹ️ About</div>
+    <div style="color:#7c85a6; font-size:0.8rem; line-height:1.65;">
+      <b style="color:#a5b4fc;">Features:</b> MFCC · Chroma · Mel · ZCR · RMS<br>
+      <b style="color:#a5b4fc;">Models:</b> SVM · RF · XGBoost · GBM<br>
+      <b style="color:#a5b4fc;">Dataset:</b> RAVDESS
+    </div>
+    """, unsafe_allow_html=True)
 
 
 # ─────────────────────────────────────────────
 #  Header
 # ─────────────────────────────────────────────
 st.markdown("""
-<div style="text-align:center; padding: 24px 0 8px;">
-  <h1 style="font-size:2.6rem; font-weight:800; background:linear-gradient(90deg,#818cf8,#c084fc,#f472b6);
+<div style="text-align:center; padding: 12px 0 4px;">
+  <h1 style="font-size:2.4rem; font-weight:800;
+             background:linear-gradient(135deg,#818cf8 0%,#a78bfa 40%,#c084fc 70%,#f472b6 100%);
              -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin:0;">
     🎙️ Human Emotion Detection
   </h1>
-  <p style="color:#94a3b8; font-size:1.05rem; margin-top:6px;">
+  <p style="color:#9ca3c2; font-size:1rem; margin-top:6px; font-weight:400;">
     Upload a voice clip or record live — discover the emotion within
   </p>
 </div>
 """, unsafe_allow_html=True)
 
-st.divider()
 
 # ─────────────────────────────────────────────
 #  Main Tabs
@@ -454,7 +630,7 @@ with tab_detect:
               <div class="confidence-ring" style="margin-top:16px;">
                 {confidence*100:.1f}%
               </div>
-              <div style="color:#94a3b8; font-size:0.9rem; margin-top:4px;">
+              <div style="color:#9ca3c2; font-size:0.88rem; margin-top:4px; font-weight:500;">
                 Confidence · {result['model_name'].replace('_',' ').title()}
               </div>
               {uncertain_note}
@@ -477,9 +653,11 @@ with tab_detect:
                 c3.metric("Sample Rate", f"{info.get('sample_rate',0)} Hz")
         else:
             st.markdown("""
-            <div style="text-align:center; padding:60px 20px; color:#4b5563;">
-              <div style="font-size:4rem;">🎙️</div>
-              <p>Upload or record audio, then click <strong>Analyse Emotion</strong></p>
+            <div style="text-align:center; padding:50px 20px;">
+              <div style="font-size:3.5rem; opacity:0.5;">🎙️</div>
+              <p style="color:#7c85a6; font-size:0.95rem; margin-top:12px;">
+                Upload or record audio, then click <strong style="color:#a5b4fc;">Analyse Emotion</strong>
+              </p>
             </div>
             """, unsafe_allow_html=True)
 
