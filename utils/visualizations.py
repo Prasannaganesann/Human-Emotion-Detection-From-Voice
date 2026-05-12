@@ -90,8 +90,10 @@ def plot_mel_spectrogram(y: np.ndarray, sr: int = SAMPLE_RATE,
     fig = go.Figure(go.Heatmap(
         z=log_mel, x=times, y=freqs,
         colorscale="Viridis",
-        colorbar=dict(title="dB", tickfont=dict(color="#e2e8f0"),
-                      titlefont=dict(color="#e2e8f0")),
+        colorbar=dict(
+            title=dict(text="dB", font=dict(color="#e2e8f0", size=12)),
+            tickfont=dict(color="#e2e8f0", size=11),
+        ),
         hovertemplate="Time: %{x:.2f}s<br>Freq: %{y:.0f} Hz<br>Power: %{z:.1f} dB<extra></extra>",
     ))
     fig.update_layout(
@@ -120,8 +122,10 @@ def plot_mfcc(y: np.ndarray, sr: int = SAMPLE_RATE,
         x=times,
         y=[f"C{i+1}" for i in range(n_mfcc)],
         colorscale="RdBu",
-        colorbar=dict(title="Value", tickfont=dict(color="#e2e8f0"),
-                      titlefont=dict(color="#e2e8f0")),
+        colorbar=dict(
+            title=dict(text="Value", font=dict(color="#e2e8f0", size=12)),
+            tickfont=dict(color="#e2e8f0", size=11),
+        ),
         hovertemplate="Time: %{x:.2f}s<br>%{y}: %{z:.2f}<extra></extra>",
     ))
     fig.update_layout(
@@ -386,8 +390,10 @@ def plot_confusion_matrix(cm: np.ndarray,
         text=cm,
         texttemplate="%{text}",
         textfont=dict(color="white", size=11),
-        colorbar=dict(title="Count", tickfont=dict(color="#e2e8f0"),
-                      titlefont=dict(color="#e2e8f0")),
+        colorbar=dict(
+            title=dict(text="Count", font=dict(color="#e2e8f0", size=12)),
+            tickfont=dict(color="#e2e8f0", size=11),
+        ),
     ))
     fig.update_layout(
         **_layout(
