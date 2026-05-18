@@ -12,6 +12,8 @@ Tabs:
 """
 
 import io, json, logging, sys, time, uuid
+import pandas as pd
+import plotly.express as px
 from pathlib import Path
 
 import numpy as np
@@ -53,11 +55,13 @@ st.markdown(CSS, unsafe_allow_html=True)
 # ── Session state ──────────────────────────────────────────────────────────
 init_db()
 for key, default in [
-    ("session_id",   str(uuid.uuid4())[:8]),
-    ("last_result",  None),
-    ("audio_bytes",  None),
-    ("audio_array",  None),
-    ("model_path",   None),
+    ("session_id",    str(uuid.uuid4())[:8]),
+    ("last_result",   None),
+    ("audio_bytes",   None),
+    ("audio_array",   None),
+    ("model_path",    None),
+    ("feat_vector",   None),   # cached feature vector for Audio Analysis tab
+    ("is_demo_model", True),   # flag for DEMO warning banner
 ]:
     if key not in st.session_state:
         st.session_state[key] = default
@@ -97,13 +101,25 @@ with st.sidebar:
         model_map = {p.stem.replace("_model","").replace("_"," ").title(): str(p) for p in model_files}
         sel = st.selectbox("🤖 Active Model", list(model_map.keys()), label_visibility="visible")
         st.session_state.model_path = model_map[sel]
+        # Flag synthetic/demo models so we can show a trust warning
+        st.session_state.is_demo_model = any(
+            kw in sel.lower() for kw in ("demo", "svm", "best")
+        )
     else:
         st.error("⚠️ No model found.\nRun `python generate_demo_model.py`")
 
+    # DEMO MODEL WARNING — shown whenever a synthetic model is active
+    if st.session_state.get("is_demo_model", True):
+        st.warning(
+            "⚠️ **Demo model active.**  "
+            "Predictions are illustrative only — not clinically accurate.  "
+            "Train with real RAVDESS data for production use."
+        )
+
     st.divider()
 
-    # Session info
-    pred_count = len(get_predictions(session_id=st.session_state.session_id))
+    # Session info — use count query, not full fetch
+    pred_count = get_predictions_count(session_id=st.session_state.session_id)
     st.markdown(f"""
     <div class="section-label">📡 Session</div>
     <div style="color:#c7d2fe;font-family:monospace;font-size:.88rem;font-weight:600;margin-bottom:8px">{st.session_state.session_id}</div>
@@ -122,7 +138,7 @@ with st.sidebar:
     st.divider()
     st.markdown("""
     <div class="section-label">ℹ️ About</div>
-    <div style="color:#64748b;font-size:.79rem;line-height:1.65">
+    <div style="color:#94a3b8;font-size:.79rem;line-height:1.65">
       <b style="color:#a5b4fc">Features:</b> MFCC · Chroma · Mel · ZCR · RMS<br>
       <b style="color:#a5b4fc">Models:</b> SVM · RF · XGBoost<br>
       <b style="color:#a5b4fc">Dataset:</b> RAVDESS<br>
@@ -140,7 +156,7 @@ st.markdown("""
              -webkit-background-clip:text;-webkit-text-fill-color:transparent">
     🎙️ Human Emotion Detection
   </h1>
-  <p style="color:#64748b;font-size:.95rem;margin-top:5px;font-weight:400">
+  <p style="color:#94a3b8;font-size:.95rem;margin-top:5px;font-weight:400">
     Analyse voice audio to detect emotional tone using AI
   </p>
 </div>""", unsafe_allow_html=True)
@@ -161,48 +177,67 @@ with tab_detect:
         mode = st.radio("Input", ["📁 Upload File", "🎤 Record Microphone"],
                         horizontal=True, label_visibility="collapsed")
 
-        audio_bytes_input = None
-        recorded_array    = None
-
+        # Use session state to persist audio across reruns (widget interactions)
         if mode == "📁 Upload File":
+            # Clear any previous recording when switching to upload mode
+            if st.session_state.get("_last_mode") != "upload":
+                st.session_state.audio_array = None
+            st.session_state["_last_mode"] = "upload"
+
             up = st.file_uploader("Drop audio file", type=["wav","mp3","flac","ogg","m4a"],
                                   label_visibility="collapsed")
             if up:
-                audio_bytes_input = up.getvalue()
-                st.audio(audio_bytes_input)
-                sz = len(audio_bytes_input) / 1024
-                st.caption(f"📄 {up.name}  ·  {sz:.1f} KB")
+                st.session_state.audio_bytes = up.getvalue()
+                st.session_state["_upload_name"] = up.name
+            if st.session_state.audio_bytes:
+                st.audio(st.session_state.audio_bytes)
+                name = st.session_state.get("_upload_name", "file")
+                sz   = len(st.session_state.audio_bytes) / 1024
+                st.caption(f"📄 {name}  ·  {sz:.1f} KB")
         else:
+            # Clear any previous upload when switching to microphone mode
+            if st.session_state.get("_last_mode") != "mic":
+                st.session_state.audio_bytes = None
+            st.session_state["_last_mode"] = "mic"
+
             dur = st.slider("Recording duration (s)", 2, 10, RECORDING_DURATION, key="rec_dur")
-            st.caption("⚠️ Ensure microphone is connected and browser permission granted.")
+            st.caption("⚠️ Ensure microphone is connected and permission granted.")
             if st.button("🔴 Start Recording", type="primary", use_container_width=True):
-                ph = st.empty()
-                with ph.container():
-                    st.info(f"🎙️ Recording for **{dur}s** … speak now!")
-                    prog = st.progress(0)
+                ph   = st.empty()
+                prog = st.progress(0)
+                ph.info(f"🎙️ Recording for **{dur}s** … speak now!")
+                try:
+                    # FIX: start recording FIRST, then show progress
+                    arr = sd.rec(int(dur * SAMPLE_RATE), samplerate=SAMPLE_RATE,
+                                 channels=1, dtype="float32")
                     for i in range(dur * 10):
                         time.sleep(0.1)
                         prog.progress((i + 1) / (dur * 10))
-                try:
-                    arr = sd.rec(int(dur * SAMPLE_RATE), samplerate=SAMPLE_RATE,
-                                 channels=1, dtype="float32")
                     sd.wait()
-                    recorded_array = arr.flatten()
-                    st.session_state.audio_array = recorded_array
+                    recorded = arr.flatten()
+                    st.session_state.audio_array = recorded
                     buf = io.BytesIO()
-                    sf.write(buf, recorded_array, SAMPLE_RATE, format="WAV")
-                    audio_bytes_input = buf.getvalue()
+                    sf.write(buf, recorded, SAMPLE_RATE, format="WAV")
+                    st.session_state.audio_bytes = buf.getvalue()
                     ph.empty()
-                    st.audio(audio_bytes_input, format="audio/wav")
-                    st.success("✅ Recording complete!")
+                    prog.empty()
+                    st.audio(st.session_state.audio_bytes, format="audio/wav")
+                    st.success("✅ Recording complete — click Analyse Emotion below.")
                 except Exception as e:
                     ph.empty()
+                    prog.empty()
                     st.error(f"Recording failed: {e}")
+            elif st.session_state.audio_bytes and st.session_state.audio_array is not None:
+                st.audio(st.session_state.audio_bytes, format="audio/wav")
+                st.caption("✅ Previous recording loaded")
 
+        has_audio = (
+            st.session_state.audio_bytes is not None or
+            st.session_state.audio_array is not None
+        )
         st.markdown("---")
         analyse = st.button("⚡ Analyse Emotion", type="primary",
-                             use_container_width=True,
-                             disabled=(audio_bytes_input is None and recorded_array is None))
+                             use_container_width=True, disabled=not has_audio)
 
     # ── Result panel ────────────────────────────────────────────────────
     with col_res:
@@ -212,15 +247,16 @@ with tab_detect:
         if analyse and predictor:
             with st.spinner("Analysing audio …"):
                 try:
-                    if recorded_array is not None:
-                        result   = predictor.predict_from_array(recorded_array, SAMPLE_RATE)
+                    if st.session_state.audio_array is not None:
+                        result   = predictor.predict_from_array(
+                            st.session_state.audio_array, SAMPLE_RATE)
                         filename = "microphone_recording"
                     else:
-                        result   = predictor.predict_from_bytes(audio_bytes_input, "uploaded_file")
-                        filename = "uploaded_file"
-                    st.session_state.last_result = result
-                    st.session_state.audio_bytes = audio_bytes_input
-                    st.session_state.audio_array = recorded_array
+                        result   = predictor.predict_from_bytes(
+                            st.session_state.audio_bytes, "uploaded_file")
+                        filename = st.session_state.get("_upload_name", "uploaded_file")
+                    st.session_state.last_result  = result
+                    st.session_state.feat_vector  = None  # invalidate cached features
                     save_prediction(
                         emotion=result["emotion"], confidence=result["confidence"],
                         probabilities=result["probabilities"], model_name=result["model_name"],
@@ -229,11 +265,13 @@ with tab_detect:
                         inference_ms=result.get("inference_time_ms"),
                     )
                 except Exception as e:
-                    st.error(f"Prediction failed: {e}")
-                    st.stop()
+                    # FIX: removed st.stop() — only show error in result column
+                    st.session_state.last_result = {"_error": str(e)}
 
         result = st.session_state.last_result
-        if result:
+        if result and "_error" in result:
+            st.error(f"❌ Prediction failed: {result['_error']}")
+        elif result:
             emotion    = result["emotion"]
             confidence = result["confidence"]
             color      = result["color"]
@@ -252,7 +290,7 @@ with tab_detect:
                 {emoji} {emotion.capitalize()}
               </div>
               <div class="confidence-num" style="margin-top:14px">{confidence*100:.1f}%</div>
-              <div style="color:#64748b;font-size:.85rem;margin-top:2px;font-weight:500">
+              <div style="color:#94a3b8;font-size:.85rem;margin-top:2px;font-weight:500">
                 Confidence · {result.get('model_version','v2')} · {result.get('inference_time_ms',0):.0f} ms
               </div>
             </div>""", unsafe_allow_html=True)
@@ -260,7 +298,7 @@ with tab_detect:
             # Top-3 predictions
             st.markdown('<div class="section-label" style="text-align:center;margin-top:4px">Top Predictions</div>', unsafe_allow_html=True)
             top3 = result.get("top_k", [])[:3]
-            cols = st.columns(len(top3))
+            cols = st.columns(len(top3)) if top3 else st.columns(1)
             for col, p in zip(cols, top3):
                 col.metric(f"{p['emoji']} {p['emotion'].capitalize()}", p["pct"])
 
@@ -269,17 +307,17 @@ with tab_detect:
                             use_container_width=True, key="det_probs")
 
             # Audio stats
-            if result["audio_info"]:
+            if result.get("audio_info"):
                 info = result["audio_info"]
                 c1, c2, c3 = st.columns(3)
-                c1.metric("Duration", f"{info.get('duration_s',0):.2f}s")
-                c2.metric("RMS", f"{info.get('rms',0):.4f}")
+                c1.metric("Duration",    f"{info.get('duration_s',0):.2f}s")
+                c2.metric("RMS",         f"{info.get('rms',0):.4f}")
                 c3.metric("Sample Rate", f"{info.get('sample_rate',0)} Hz")
         else:
             st.markdown("""
             <div style="text-align:center;padding:50px 20px">
               <div style="font-size:3rem;opacity:.35">🎙️</div>
-              <p style="color:#475569;font-size:.92rem;margin-top:10px">
+              <p style="color:#94a3b8;font-size:.92rem;margin-top:10px">
                 Upload or record audio,<br>then click <strong style="color:#818cf8">Analyse Emotion</strong>
               </p>
             </div>""", unsafe_allow_html=True)
@@ -384,14 +422,18 @@ The model uses these as its primary input features.""")
             else:
                 y, sr = preprocess_audio(audio_array=st.session_state.get("audio_array"))
 
+            # Cache the feature vector so Audio Analysis tab doesn't re-extract on every rerun
+            if st.session_state.feat_vector is None:
+                from utils.feature_extraction import extract_features
+                st.session_state.feat_vector = extract_features(y, sr)
+            feat = st.session_state.feat_vector
+
             v1, v2 = st.columns(2)
             with v1:
                 st.plotly_chart(plot_waveform(y, sr), use_container_width=True, key="viz_wave")
                 st.plotly_chart(plot_mfcc(y, sr),     use_container_width=True, key="viz_mfcc")
             with v2:
                 st.plotly_chart(plot_mel_spectrogram(y, sr), use_container_width=True, key="viz_mel")
-                from utils.feature_extraction import extract_features
-                feat = extract_features(y, sr)
                 st.markdown("**📐 Feature Vector Statistics**")
                 fc1, fc2, fc3 = st.columns(3)
                 fc1.metric("Dimensions", len(feat))
@@ -410,16 +452,17 @@ with tab_history:
     # ── Filters ────────────────────────────────────────────────────────
     fc1, fc2, fc3, fc4 = st.columns([2, 1.5, 1, 1])
     with fc1:
-        search_txt = st.text_input("🔍 Search", placeholder="emotion or filename …", label_visibility="collapsed")
+        search_txt = st.text_input("🔍 Search by emotion or filename",
+                                   placeholder="e.g. happy or recording.wav …")
     with fc2:
-        emotions_in_db = ["All"] + get_distinct_emotions()
-        emo_filter = st.selectbox("Emotion", emotions_in_db, label_visibility="collapsed")
+        emotions_in_db = ["All emotions"] + get_distinct_emotions()
+        emo_filter = st.selectbox("🎭 Filter by emotion", emotions_in_db)
     with fc3:
-        conf_min = st.slider("Min conf %", 0, 100, 0, key="hist_conf_min")
+        conf_min = st.slider("📊 Min confidence %", 0, 100, 0, key="hist_conf_min")
     with fc4:
-        page_size = st.selectbox("Per page", [10, 20, 50], index=1, label_visibility="collapsed")
+        page_size = st.selectbox("📄 Per page", [10, 20, 50], index=1)
 
-    emo_arg  = None if emo_filter == "All" else emo_filter
+    emo_arg    = None if emo_filter == "All emotions" else emo_filter
     conf_min_f = conf_min / 100.0
 
     total = get_predictions_count(emotion_filter=emo_arg, min_confidence=conf_min_f, search_text=search_txt or None)
@@ -445,8 +488,8 @@ with tab_history:
         if not history:
             st.markdown("""
             <div style="text-align:center;padding:40px 20px">
-              <div style="font-size:2.5rem;opacity:.3">📭</div>
-              <p style="color:#475569;margin-top:8px">No predictions match your filters.</p>
+              <div style="font-size:2.5rem;opacity:.3">💭</div>
+              <p style="color:#94a3b8;margin-top:8px">No predictions match your filters.</p>
             </div>""", unsafe_allow_html=True)
         else:
             for rec in history:
@@ -490,10 +533,14 @@ with tab_dash:
           <p style="color:#475569;margin-top:10px">No data yet — make some predictions first.</p>
         </div>""", unsafe_allow_html=True)
     else:
-        total     = sum(v["count"] for v in stats.values())
-        dom_emo   = max(stats, key=lambda k: stats[k]["count"])
-        avg_conf  = np.mean([v["avg_confidence"] for v in stats.values()])
-        max_conf  = max(v["max_confidence"] for v in stats.values())
+        total    = sum(v["count"] for v in stats.values())
+        dom_emo  = max(stats, key=lambda k: stats[k]["count"])
+        # FIX: weighted average confidence (not mean-of-means)
+        avg_conf = (
+            sum(v["avg_confidence"] * v["count"] for v in stats.values()) / total
+            if total > 0 else 0.0
+        )
+        max_conf = max(v["max_confidence"] for v in stats.values())
 
         # KPI row
         k1, k2, k3, k4 = st.columns(4)
@@ -511,22 +558,29 @@ with tab_dash:
         with d2:
             comp_path = LOGS_DIR / "model_comparison.json"
             if comp_path.exists():
-                comp = json.load(open(comp_path))
+                with open(comp_path) as f:
+                    comp = json.load(f)
                 st.plotly_chart(plot_model_comparison(comp),
                                 use_container_width=True, key="dash_comp")
             else:
-                import plotly.express as px
+                # Prediction count bar chart (replaces misleading model-comparison fallback)
+                from utils.visualizations import _layout
+                import plotly.graph_objects as go
                 emotions = list(stats.keys())
                 counts   = [stats[e]["count"] for e in emotions]
-                fig = px.bar(
+                colors   = [EMOTION_COLORS.get(e, "#94A3B8") for e in emotions]
+                fig = go.Figure(go.Bar(
                     x=[e.capitalize() for e in emotions], y=counts,
-                    color=emotions,
-                    color_discrete_map={e: EMOTION_COLORS.get(e,"#94A3B8") for e in emotions},
-                    title="Prediction Count by Emotion", template="plotly_dark",
-                )
-                fig.update_layout(showlegend=False, paper_bgcolor="rgba(0,0,0,0)",
-                                  plot_bgcolor="rgba(255,255,255,.03)", font_color="#e2e8f0",
-                                  height=320)
+                    marker=dict(color=colors, line=dict(width=0)),
+                    text=counts, textposition="outside",
+                    textfont=dict(color="#e2e8f0", size=11),
+                    hovertemplate="%{x}: %{y} predictions<extra></extra>",
+                ))
+                fig.update_layout(**_layout(
+                    title=dict(text="Predictions by Emotion", font=dict(size=14, color="#e2e8f0")),
+                    yaxis=dict(title="Count", gridcolor="rgba(255,255,255,.06)"),
+                    height=320, showlegend=False,
+                ))
                 st.plotly_chart(fig, use_container_width=True, key="dash_bar")
 
         # Trend + histogram
@@ -541,10 +595,9 @@ with tab_dash:
 
         # Stats table
         st.markdown("#### 📋 Emotion Statistics")
-        import pandas as pd
         df = pd.DataFrame([
-            {"Emotion": e.capitalize(),
-             "Count":   stats[e]["count"],
+            {"Emotion":  e.capitalize(),
+             "Count":    stats[e]["count"],
              "Avg Conf": f"{stats[e]['avg_confidence']*100:.1f}%",
              "Max Conf": f"{stats[e]['max_confidence']*100:.1f}%",
              "Share":    f"{stats[e]['count']/total*100:.1f}%"}

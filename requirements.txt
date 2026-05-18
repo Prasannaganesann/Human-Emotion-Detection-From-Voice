@@ -11,14 +11,12 @@ librosa>=0.10.1
 soundfile>=0.12.1
 sounddevice>=0.4.6
 
-# ── Visualization ──────────────────────────────
-matplotlib>=3.8.0
-plotly>=5.18.0
-seaborn>=0.13.0
+# ── Visualization ───────────────────────────────
+# Pinned to >=6.0.0 to avoid the colorbar.titlefont breaking change from 5.x
+plotly>=6.0.0
 
-# ── Web App ────────────────────────────────────
+# ── Web App ───────────────────────────────────
 streamlit>=1.30.0
-audio-recorder-streamlit>=0.0.8
 
 # ── API ────────────────────────────────────────
 fastapi>=0.110.0

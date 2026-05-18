@@ -54,21 +54,23 @@ def load_audio(file_path: str, sr: int = SAMPLE_RATE) -> tuple[np.ndarray, int]:
 def load_audio_bytes(audio_bytes: bytes, sr: int = SAMPLE_RATE) -> tuple[np.ndarray, int]:
     """
     Load audio from raw bytes (e.g., from Streamlit uploader or API).
-
-    Parameters
-    ----------
-    audio_bytes : bytes
-        Raw audio file bytes.
-    sr : int
-        Target sample rate.
-
-    Returns
-    -------
-    (y, sr) : tuple
+    Falls back to librosa for MP3/M4A which soundfile cannot decode.
     """
     import io
     buf = io.BytesIO(audio_bytes)
-    y, original_sr = sf.read(buf)
+    try:
+        y, original_sr = sf.read(buf)
+    except Exception:
+        # soundfile cannot read MP3/M4A — fall back to librosa (requires ffmpeg)
+        buf.seek(0)
+        try:
+            y, original_sr = librosa.load(buf, sr=sr, mono=True)
+            return y.astype(np.float32), sr
+        except Exception as e:
+            raise ValueError(
+                f"Cannot decode audio. Supported formats: WAV, FLAC, OGG. "
+                f"For MP3/M4A, install ffmpeg. Error: {e}"
+            ) from e
     if y.ndim > 1:
         y = y.mean(axis=1)             # Stereo → mono
     y = librosa.resample(y.astype(np.float32), orig_sr=original_sr, target_sr=sr)

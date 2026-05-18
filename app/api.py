@@ -51,10 +51,10 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=["*"],          # Restrict to specific origins in production
+    allow_credentials=False,      # FIX: cannot use True with wildcard origins (browser-rejected)
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # Initialise DB on startup
@@ -76,14 +76,20 @@ def get_predictor() -> EmotionPredictor:
 #  Response Schemas
 # ─────────────────────────────────────────────
 class PredictionResponse(BaseModel):
-    emotion: str
-    confidence: float
-    confidence_pct: str
-    emoji: str
-    color: str
-    probabilities: dict
-    model_name: str
-    audio_info: dict
+    """Response schema for /predict. Matches EmotionPredictor.predict() result dict."""
+    emotion:            str
+    confidence:         float
+    confidence_pct:     str
+    is_uncertain:       bool
+    uncertainty_reason: str | None
+    emoji:              str
+    color:              str
+    probabilities:      dict
+    top_k:              list
+    model_name:         str
+    model_version:      str
+    inference_time_ms:  float
+    audio_info:         dict
 
 
 # ─────────────────────────────────────────────

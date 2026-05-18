@@ -95,7 +95,12 @@ div[data-testid="metric-container"] [data-testid="stMetricValue"] {
   transform:translateY(-2px);
   box-shadow:0 8px 28px rgba(99,102,241,.45) !important; filter:brightness(1.08);
 }
-.stButton > button:active { transform:translateY(0) !important; }
+.stButton > button:active  { transform:translateY(0) !important; }
+.stButton > button:focus-visible {
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 4px rgba(129,140,248,.2) !important;
+}
 .stButton > button:disabled { opacity:.45 !important; transform:none !important; }
 
 /* ── UPLOAD ──────────────────────────────────────────── */
